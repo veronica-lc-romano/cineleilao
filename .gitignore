@@ -1,0 +1,48 @@
+﻿# Segredos e variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Backups e dados locais
+backups/
+*.sql
+*.sql.gz
+
+# Frontend: dependências e build
+frontend/node_modules/
+frontend/dist/
+
+# Python e Django
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+venv/
+.venv/
+env/
+
+# Configurações e arquivos locais
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Banco SQLite local
+db.sqlite3
+db.sqlite3-journal
+
+# Backups locais de arquivos do projeto
+*.backup
+*.backup_*
+
+# Arquivos temporários e backups adicionais
+*.bak
+*.tmp
+*.log.*
+
+# Ambiente de desenvolvimento
+.env.local
+.env.development.local
+.env.production.local

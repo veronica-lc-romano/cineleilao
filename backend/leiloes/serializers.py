@@ -18,6 +18,7 @@ class LeilaoSerializer(serializers.ModelSerializer):
             "id",
             "filme_tmdb_id",
             "titulo",
+            "poster_path",
             "descricao",
             "lance_inicial",
             "inicio_em",

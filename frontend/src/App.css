@@ -376,10 +376,24 @@ h2 {
 .auction-poster {
   display: grid;
   place-items: center;
-  min-height: 100px;
-  padding: 20px;
+  min-height: 0;
+  padding: 0;
   background: #24242c;
   color: #b0b0bb;
+}
+
+.auction-poster img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.auction-poster span {
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
 }
 
 .auction-info {

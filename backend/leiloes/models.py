@@ -15,6 +15,7 @@ class Leilao(models.Model):
         CANCELADO = "cancelado", "Cancelado"
 
     filme_tmdb_id = models.PositiveIntegerField()
+    poster_path = models.CharField(max_length=255, blank=True)
     titulo = models.CharField(max_length=150)
     descricao = models.TextField(blank=True)
 

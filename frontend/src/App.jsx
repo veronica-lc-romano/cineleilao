@@ -341,6 +341,7 @@ export default function App() {
       const corpo = {
         filme_tmdb_id: Number(filme.tmdb_id),
         titulo: filme.titulo,
+        poster_path: filme.poster_path || "",
         descricao: descricaoLeilao.trim(),
         lance_inicial: Number(lanceInicial).toFixed(2),
         inicio_em: inicio.toISOString(),
@@ -619,7 +620,14 @@ export default function App() {
 
               <article className="auction-card" key={leilao.id}>
                 <div className="auction-poster">
-                  <span>TMDB #{leilao.filme_tmdb_id}</span>
+                  {leilao.poster_path ? (
+                    <img
+                      src={`${POSTER_URL}${leilao.poster_path}`}
+                      alt={`Pôster de ${leilao.titulo}`}
+                    />
+                  ) : (
+                    <span>Pôster indisponível</span>
+                  )}
                 </div>
 
                 <div className="auction-info">

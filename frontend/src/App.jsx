@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Lances from "./Lances";
 
-const API = "http://localhost:8000/api";
+const API = "/api";
 const API_FILMES = `${API}/filmes/pesquisar/`;
 const API_USUARIOS = `${API}/usuarios`;
 const API_LEILOES = `${API}/leiloes/`;

@@ -46,3 +46,6 @@ db.sqlite3-journal
 .env.local
 .env.development.local
 .env.production.local
+
+# Certificados SSL locais
+backend/certs/

@@ -91,19 +91,67 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("MARIADB_DATABASE", "leilao_filmes"),
-        "USER": os.getenv("MARIADB_USER", "leilao"),
-        "PASSWORD": os.getenv("MARIADB_PASSWORD", ""),
-        "HOST": os.getenv("MARIADB_HOST", "db"),
-        "PORT": os.getenv("MARIADB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-        },
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+DB_SSL_CA = os.getenv("DB_SSL_CA")
+DB_SSL_CA_BASE64 = os.getenv("DB_SSL_CA_BASE64")
+
+if DATABASE_URL:
+    import base64
+    import tempfile
+    import urllib.parse
+
+    db_url = urllib.parse.urlparse(DATABASE_URL)
+
+    ssl_options = {
+        "ca": DB_SSL_CA,
     }
-}
+
+    if DB_SSL_CA_BASE64:
+        ca_content = base64.b64decode(DB_SSL_CA_BASE64)
+
+        ca_path = os.path.join(
+            tempfile.gettempdir(),
+            "aiven-ca.pem",
+        )
+
+        with open(ca_path, "wb") as ca_file:
+            ca_file.write(ca_content)
+
+        ssl_options["ca"] = ca_path
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": db_url.path.lstrip("/"),
+            "USER": urllib.parse.unquote(db_url.username or ""),
+            "PASSWORD": urllib.parse.unquote(db_url.password or ""),
+            "HOST": db_url.hostname,
+            "PORT": db_url.port or 3306,
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                "ssl": ssl_options,
+            },
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MARIADB_DATABASE", "leilao_filmes"),
+            "USER": os.getenv("MARIADB_USER", "leilao"),
+            "PASSWORD": os.getenv("MARIADB_PASSWORD", ""),
+            "HOST": os.getenv("MARIADB_HOST", "db"),
+            "PORT": os.getenv("MARIADB_PORT", "3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
+    }
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -169,6 +217,7 @@ AUTH_USER_MODEL = "usuarios.Usuario"
 
 # Configurações de segurança para produção
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

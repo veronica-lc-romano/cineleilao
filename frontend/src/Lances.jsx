@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const API = "http://localhost:8000/api";
+const API = "/api";
 
 export default function Lances({ leilaoId, usuario }) {
   const [lances, setLances] = useState([]);

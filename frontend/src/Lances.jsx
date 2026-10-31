@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 const API = "/api";
 
-export default function Lances({ leilaoId, usuario }) {
+export default function Lances({ leilaoId, usuario, statusLeilao }) {
   const [lances, setLances] = useState([]);
   const [valor, setValor] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -107,7 +107,7 @@ export default function Lances({ leilaoId, usuario }) {
       {erro && <p className="text-danger">{erro}</p>}
       {mensagem && <p className="text-success">{mensagem}</p>}
 
-      {usuario?.papel === "participante" && (
+      {usuario?.papel === "participante" && statusLeilao === "aberto" && (
         <form onSubmit={enviarLance}>
           <label htmlFor={`valor-lance-${leilaoId}`}>
             Seu lance (R$)

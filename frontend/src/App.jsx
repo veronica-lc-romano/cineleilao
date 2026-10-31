@@ -624,10 +624,11 @@ export default function App() {
 
                 <div className="auction-info">
                   <h3>{leilao.titulo}</h3>
-                                <Lances
-  leilaoId={leilao.id}
-  usuario={usuario}
-/>
+                      <Lances
+                        leilaoId={leilao.id}
+                        usuario={usuario}
+                        statusLeilao={leilao.status}
+                      />
 
                   <p className={`auction-status ${leilao.status}`}>
                     {leilao.status}

@@ -510,114 +510,140 @@ export default function App() {
         </button>
       </div>
 
-      <section className="wallet-panel">
-        <h2>Minha carteira</h2>
 
-        <form className="wallet-add-form" onSubmit={adicionarCredito}>
-          <label htmlFor="valorCredito">Adicionar saldo para testes (R$)</label>
+<section className="wallet-panel">
+  <h2>
+    {usuario.papel === "leiloeiro"
+      ? "Meus recebimentos"
+      : "Minha carteira"}
+  </h2>
 
-          <div className="wallet-add-controls">
-            <input
-              id="valorCredito"
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="Ex.: 100"
-              value={valorCredito}
-              onChange={(event) => setValorCredito(event.target.value)}
-              disabled={adicionandoCredito}
-              required
-            />
+  {usuario.papel === "participante" && (
+    <form className="wallet-add-form" onSubmit={adicionarCredito}>
+      <label htmlFor="valorCredito">
+        Adicionar créditos fictícios (R$)
+      </label>
 
-            <button type="submit" disabled={adicionandoCredito}>
-              {adicionandoCredito ? "Adicionando..." : "Adicionar saldo"}
-            </button>
-          </div>
-        </form>
+      <div className="wallet-add-controls">
+        <input
+          id="valorCredito"
+          type="number"
+          min="10"
+          max="1000"
+          step="0.01"
+          placeholder="Ex.: 100"
+          value={valorCredito}
+          onChange={(event) => setValorCredito(event.target.value)}
+          disabled={adicionandoCredito}
+          required
+        />
 
-        {carregandoCarteira ? (
-          <p>Carregando carteira...</p>
-        ) : (
-          <>
-            {erroCarteira && (
-              <p className="error">{erroCarteira}</p>
-            )}
+        <button type="submit" disabled={adicionandoCredito}>
+          {adicionandoCredito ? "Adicionando..." : "Adicionar saldo"}
+        </button>
+      </div>
+    </form>
+  )}
 
-            {carteira && (
-              <div className="wallet-balances">
-                <div className="wallet-balance">
-                  <span>Saldo disponível</span>
-                  <strong>
-                    {Number(carteira.saldo_disponivel).toLocaleString(
-                      "pt-BR",
-                      {
-                        style: "currency",
-                        currency: "BRL",
-                      }
-                    )}
-                  </strong>
-                </div>
+  {carregandoCarteira ? (
+    <p>Carregando...</p>
+  ) : (
+    <>
+      {erroCarteira && (
+        <p className="error">{erroCarteira}</p>
+      )}
 
-                <div className="wallet-balance">
-                  <span>Saldo reservado</span>
-                  <strong>
-                    {Number(carteira.saldo_reservado).toLocaleString(
-                      "pt-BR",
-                      {
-                        style: "currency",
-                        currency: "BRL",
-                      }
-                    )}
-                  </strong>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="wallet-refresh"
-              onClick={carregarCarteira}
-            >
-              Atualizar carteira
-            </button>
-
-            <div className="wallet-history">
-              <h3>Histórico de movimentações</h3>
-
-              {movimentacoes.length === 0 ? (
-                <p>Nenhuma movimentação registrada.</p>
-              ) : (
-                movimentacoes.map((movimentacao) => (
-                  <div
-                    className="wallet-movement"
-                    key={movimentacao.id}
-                  >
-                    <div>
-                      <strong>
-                        {movimentacao.tipo_display}
-                      </strong>
-                      <p>{movimentacao.descricao}</p>
-                      <p>
-                        {formatarData(movimentacao.criada_em)}
-                      </p>
-                    </div>
-
-                    <strong>
-                      {Number(movimentacao.valor).toLocaleString(
-                        "pt-BR",
-                        {
-                          style: "currency",
-                          currency: "BRL",
-                        }
-                      )}
-                    </strong>
-                  </div>
-                ))
+      {carteira && (
+        <div className="wallet-balances">
+          <div className="wallet-balance">
+            <span>Saldo disponível</span>
+            <strong>
+              {Number(carteira.saldo_disponivel).toLocaleString(
+                "pt-BR",
+                {
+                  style: "currency",
+                  currency: "BRL",
+                }
               )}
+            </strong>
+          </div>
+
+          {usuario.papel === "participante" && (
+            <div className="wallet-balance">
+              <span>Saldo reservado</span>
+              <strong>
+                {Number(carteira.saldo_reservado).toLocaleString(
+                  "pt-BR",
+                  {
+                    style: "currency",
+                    currency: "BRL",
+                  }
+                )}
+              </strong>
             </div>
-          </>
-        )}
-      </section>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="wallet-refresh"
+        onClick={carregarCarteira}
+      >
+        Atualizar carteira
+      </button>
+
+      <div className="wallet-history">
+        <h3>
+          {usuario.papel === "leiloeiro"
+            ? "Histórico de recebimentos"
+            : "Histórico de movimentações"}
+        </h3>
+
+        {(() => {
+          const movimentacoesExibidas =
+            usuario.papel === "leiloeiro"
+              ? movimentacoes.filter(
+                  (movimentacao) => movimentacao.tipo === "recebimento"
+                )
+              : movimentacoes;
+
+          return movimentacoesExibidas.length === 0 ? (
+            <p>
+              {usuario.papel === "leiloeiro"
+                ? "Nenhum recebimento registrado."
+                : "Nenhuma movimentação registrada."}
+            </p>
+          ) : (
+            movimentacoesExibidas.map((movimentacao) => (
+              <div
+                className="wallet-movement"
+                key={movimentacao.id}
+              >
+                <div>
+                  <strong>{movimentacao.tipo_display}</strong>
+                  <p>{movimentacao.descricao}</p>
+                  <p>{formatarData(movimentacao.criada_em)}</p>
+                </div>
+
+                <strong>
+                  {Number(movimentacao.valor).toLocaleString(
+                    "pt-BR",
+                    {
+                      style: "currency",
+                      currency: "BRL",
+                    }
+                  )}
+                </strong>
+              </div>
+            ))
+          );
+        })()}
+      </div>
+    </>
+  )}
+</section>
+
     </>
 
         ) : (

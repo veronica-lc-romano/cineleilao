@@ -141,8 +141,9 @@ export default function Lances({ leilaoId, usuario, statusLeilao }) {
             <strong>
               R$ {Number(lance.valor).toFixed(2)}
             </strong>
-            {" — "}
+            {" - "}
             {lance.participante_username}
+            {"  - "}
             <small className="d-block text-muted">
               {new Date(lance.criado_em).toLocaleString("pt-BR")}
             </small>

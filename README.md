@@ -6,24 +6,52 @@ O CineLeilão é uma aplicação web desenvolvida para conectar o universo cinem
 
 A aplicação utiliza uma arquitetura separada entre backend e frontend, com comunicação entre as tecnologias e persistência de dados em MariaDB.
 
+## 🌐 Aplicação publicada
+
+Acesse o CineLeilão:
+
+<https://cineleilao.vercel.app/>
+
 ## 🚀 Tecnologias utilizadas
 
 | Área | Tecnologias |
-|---|---|
+| --- | --- |
 | Backend | Python, Django 5.2, Django REST Framework |
 | Frontend | React 19, JavaScript, Vite 8 |
 | Banco de dados | MariaDB 11 |
-| Infraestrutura | Docker e Docker Compose |
+| Infraestrutura | Docker, Docker Compose, Vercel e Aiven |
 | Integração externa | The Movie Database (TMDB) |
 | Qualidade | Testes automatizados e ESLint |
 
 ## ✨ Funcionalidades
 
-- Cadastro e gerenciamento de usuários.
-- Cadastro e consulta de filmes.
-- Criação e gerenciamento de leilões.
-- Registro e gerenciamento de lances.
-- Integração com a API do The Movie Database (TMDB).
+### Usuários e perfis
+
+- Cadastro e autenticação de usuários.
+- Dois perfis de acesso: participante e leiloeiro.
+- Controle de permissões conforme o perfil do usuário.
+
+### Filmes e leilões
+
+- Pesquisa e consulta de filmes utilizando a API do The Movie Database (TMDB).
+- Criação e gerenciamento de leilões por usuários com perfil de leiloeiro.
+- Exibição de informações e pôsteres dos filmes.
+- Consulta aos leilões disponíveis e encerrados.
+
+### Lances
+
+- Registro de lances por participantes.
+- Validação do valor mínimo dos lances.
+- Reserva automática do saldo utilizado nos lances.
+- Liberação de valores reservados quando um participante é superado por outro lance.
+
+### Carteira e movimentações
+
+- Adição de créditos fictícios para testes, entre R$ 10 e R$ 1.000 por operação.
+- Reserva e liberação automática de valores durante a disputa de lances.
+- Histórico de movimentações financeiras.
+- Consulta de saldo disponível e recebimentos pelos leiloeiros.
+- Transferência do valor do lance vencedor ao leiloeiro após a liquidação do leilão.
 
 ## 📁 Estrutura do projeto
 
@@ -80,7 +108,7 @@ Copy-Item .env.example .env
 Configure as variáveis no arquivo `.env`:
 
 | Variável | Descrição |
-|---|---|
+| --- | --- |
 | `TMDB_API_KEY` | Chave de acesso à API TMDB |
 | `DJANGO_SECRET_KEY` | Chave secreta do Django |
 | `DJANGO_DEBUG` | Modo de desenvolvimento |
@@ -116,7 +144,7 @@ docker compose exec backend python manage.py check
 
 Backend:
 
-http://localhost:8000
+<http://localhost:8000/>
 
 ### 4. Iniciar o frontend
 
@@ -130,7 +158,7 @@ npm run dev
 
 Frontend:
 
-http://localhost:5173
+<http://localhost:5173/>
 
 ## 🧪 Testes e validações
 

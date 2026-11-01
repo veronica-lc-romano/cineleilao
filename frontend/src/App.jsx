@@ -44,6 +44,14 @@ export default function App() {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
+  // Carteira
+  const [carteira, setCarteira] = useState(null);
+  const [movimentacoes, setMovimentacoes] = useState([]);
+  const [carregandoCarteira, setCarregandoCarteira] = useState(false);
+  const [erroCarteira, setErroCarteira] = useState("");
+  const [valorCredito, setValorCredito] = useState("");
+  const [adicionandoCredito, setAdicionandoCredito] = useState(false);
+
   // Autenticação
   const [usuario, setUsuario] = useState(null);
   const [carregandoAuth, setCarregandoAuth] = useState(true);
@@ -104,12 +112,95 @@ export default function App() {
       }
 
       setUsuario(dados.usuario);
+      await carregarCarteira();
     } catch  {
       setErroAuth(
         "Não foi possível verificar a sessão. Confira se o Django está rodando."
       );
     } finally {
       setCarregandoAuth(false);
+    }
+  }
+
+  async function carregarCarteira() {
+    setCarregandoCarteira(true);
+    setErroCarteira("");
+
+    try {
+      const [respostaCarteira, respostaMovimentacoes] = await Promise.all([
+        fetch(`${API_USUARIOS}/carteira/`, {
+          credentials: "include",
+        }),
+        fetch(`${API_USUARIOS}/movimentacoes/`, {
+          credentials: "include",
+        }),
+      ]);
+
+      const dadosCarteira = await respostaCarteira.json();
+      const dadosMovimentacoes = await respostaMovimentacoes.json();
+
+      if (!respostaCarteira.ok || !respostaMovimentacoes.ok) {
+        throw new Error(
+          mensagemErro(
+            !respostaCarteira.ok ? dadosCarteira : dadosMovimentacoes,
+            "Não foi possível carregar a carteira."
+          )
+        );
+      }
+
+      setCarteira(dadosCarteira);
+      setMovimentacoes(dadosMovimentacoes.movimentacoes || []);
+    } catch (error) {
+      setErroCarteira(error.message);
+    } finally {
+      setCarregandoCarteira(false);
+    }
+}
+
+  async function adicionarCredito(event) {
+    event.preventDefault();
+
+    setErroCarteira("");
+
+    const valor = Number(valorCredito);
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setErroCarteira("Informe um valor válido maior que zero.");
+      return;
+    }
+
+    setAdicionandoCredito(true);
+
+    try {
+      const csrfToken = await obterCsrf();
+
+      const resposta = await fetch(
+        `${API_USUARIOS}/carteira/adicionar-credito/`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({ valor: valorCredito }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          mensagemErro(dados, "Não foi possível adicionar o crédito.")
+        );
+      }
+
+      setValorCredito("");
+      await carregarCarteira();
+    } catch (error) {
+      setErroCarteira(error.message);
+    } finally {
+      setAdicionandoCredito(false);
     }
   }
 
@@ -169,7 +260,6 @@ export default function App() {
             username: username.trim(),
             password: senha,
           }
-        
         : {
             username: username.trim(),
             email: email.trim(),
@@ -201,6 +291,7 @@ export default function App() {
       }
 
       setUsuario(dados.usuario);
+      await carregarCarteira();
       setPapel("participante");
       setSenha("");
       setConfirmarSenha("");
@@ -243,6 +334,9 @@ export default function App() {
       }
 
       setUsuario(null);
+      setCarteira(null);
+      setMovimentacoes([]);
+      setErroCarteira("");
       setMensagemAuth(dados.mensagem || "Logout realizado com sucesso.");
       setErroCriacaoLeilao("");
       setMensagemLeilao("");
@@ -396,20 +490,136 @@ export default function App() {
         <p>Encontre filmes para os próximos leilões.</p>
       </header>
 
-      <section className="auth-panel">
-        {carregandoAuth ? (
-          <p>Verificando sessão...</p>
-        ) : usuario ? (
-          <div className="user-bar">
-            <div>
-              <strong>Olá, {usuario.username}!</strong>
-              <p>Perfil: {usuario.papel}</p>
-            </div>
+<section className="auth-panel">
+  {carregandoAuth ? (
+    <p>Verificando sessão...</p>
+  ) : usuario ? (
+    <>
+      <div className="user-bar">
+        <div>
+          <strong>Olá, {usuario.username}!</strong>
+          <p>Perfil: {usuario.papel}</p>
+        </div>
 
-            <button type="button" onClick={sair} disabled={enviandoAuth}>
-              {enviandoAuth ? "Saindo..." : "Sair"}
+        <button
+          type="button"
+          onClick={sair}
+          disabled={enviandoAuth}
+        >
+          {enviandoAuth ? "Saindo..." : "Sair"}
+        </button>
+      </div>
+
+      <section className="wallet-panel">
+        <h2>Minha carteira</h2>
+
+        <form className="wallet-add-form" onSubmit={adicionarCredito}>
+          <label htmlFor="valorCredito">Adicionar saldo para testes (R$)</label>
+
+          <div className="wallet-add-controls">
+            <input
+              id="valorCredito"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="Ex.: 100"
+              value={valorCredito}
+              onChange={(event) => setValorCredito(event.target.value)}
+              disabled={adicionandoCredito}
+              required
+            />
+
+            <button type="submit" disabled={adicionandoCredito}>
+              {adicionandoCredito ? "Adicionando..." : "Adicionar saldo"}
             </button>
           </div>
+        </form>
+
+        {carregandoCarteira ? (
+          <p>Carregando carteira...</p>
+        ) : (
+          <>
+            {erroCarteira && (
+              <p className="error">{erroCarteira}</p>
+            )}
+
+            {carteira && (
+              <div className="wallet-balances">
+                <div className="wallet-balance">
+                  <span>Saldo disponível</span>
+                  <strong>
+                    {Number(carteira.saldo_disponivel).toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL",
+                      }
+                    )}
+                  </strong>
+                </div>
+
+                <div className="wallet-balance">
+                  <span>Saldo reservado</span>
+                  <strong>
+                    {Number(carteira.saldo_reservado).toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL",
+                      }
+                    )}
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="wallet-refresh"
+              onClick={carregarCarteira}
+            >
+              Atualizar carteira
+            </button>
+
+            <div className="wallet-history">
+              <h3>Histórico de movimentações</h3>
+
+              {movimentacoes.length === 0 ? (
+                <p>Nenhuma movimentação registrada.</p>
+              ) : (
+                movimentacoes.map((movimentacao) => (
+                  <div
+                    className="wallet-movement"
+                    key={movimentacao.id}
+                  >
+                    <div>
+                      <strong>
+                        {movimentacao.tipo_display}
+                      </strong>
+                      <p>{movimentacao.descricao}</p>
+                      <p>
+                        {formatarData(movimentacao.criada_em)}
+                      </p>
+                    </div>
+
+                    <strong>
+                      {Number(movimentacao.valor).toLocaleString(
+                        "pt-BR",
+                        {
+                          style: "currency",
+                          currency: "BRL",
+                        }
+                      )}
+                    </strong>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </section>
+    </>
+
         ) : (
           <>
             <h2>{modoLogin ? "Entrar" : "Criar conta"}</h2>
@@ -440,7 +650,6 @@ export default function App() {
                 </>
               )}
 
-              
             {!modoLogin && (
               <>
                 <label htmlFor="papel">Tipo de conta</label>
@@ -509,11 +718,11 @@ export default function App() {
                 : "Já tem conta? Faça login"}
             </button>
           </>
-        )}
+          )}
+      </section>
 
         {erroAuth && <p className="error">{erroAuth}</p>}
         {mensagemAuth && <p className="success">{mensagemAuth}</p>}
-      </section>
 
       {ehLeiloeiro && (
         <section className="auction-form-panel">
@@ -654,9 +863,6 @@ export default function App() {
                   </p>
 
                   {leilao.descricao && <p>{leilao.descricao}</p>}
-
-
-
                   <p>Início: {formatarData(leilao.inicio_em)}</p>
                   <p>Encerramento: {formatarData(leilao.encerra_em)}</p>
                   <p className="auction-creator">

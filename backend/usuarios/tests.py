@@ -2,6 +2,7 @@
 
 from django.test import Client, TestCase
 from django.urls import reverse
+from decimal import Decimal
 
 from .models import Carteira, Usuario
 
@@ -280,3 +281,49 @@ class AutenticacaoTests(TestCase):
         self.assertEqual(resposta.status_code, 200)
         self.assertIn("csrfToken", resposta.json())
         self.assertIn("csrftoken", cliente.cookies)
+
+    # Carteira e movimentações
+
+    def test_carteira_sem_autenticacao_retorna_401(self):
+        resposta = self.client.get(
+            reverse("consultar-carteira")
+        )
+
+        self.assertEqual(resposta.status_code, 401)
+
+    def test_carteira_autenticada_retorna_saldos(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.get(
+            reverse("consultar-carteira")
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(
+            Decimal(resposta.json()["saldo_disponivel"]),
+            Decimal("0.00"),
+        )
+        self.assertEqual(
+            Decimal(resposta.json()["saldo_reservado"]),
+            Decimal("0.00"),
+        )
+
+    def test_movimentacoes_sem_autenticacao_retorna_401(self):
+        resposta = self.client.get(
+            reverse("consultar-movimentacoes")
+        )
+
+        self.assertEqual(resposta.status_code, 401)
+
+    def test_movimentacoes_autenticadas_retorna_lista(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.get(
+            reverse("consultar-movimentacoes")
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(
+            resposta.json()["movimentacoes"],
+            [],
+        )

@@ -1,4 +1,3 @@
-
 import json
 
 from django.contrib.auth import authenticate, login, logout
@@ -8,8 +7,10 @@ from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.views.decorators.http import require_GET, require_POST
+from django.conf import settings
 
 from .models import Carteira, Usuario
+from .services import adicionar_saldo_teste
 
 
 def ler_json(request):
@@ -148,3 +149,84 @@ def perfil(request):
         )
 
     return JsonResponse({"usuario": dados_usuario(request.user)})
+
+
+@require_GET
+def consultar_carteira(request):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"erro": "Autenticação necessária."},
+            status=401,
+        )
+
+    carteira = Carteira.objects.get_or_create(usuario=request.user)[0]
+
+    return JsonResponse({
+        "saldo_disponivel": str(carteira.saldo_disponivel),
+        "saldo_reservado": str(carteira.saldo_reservado),
+        "atualizada_em": carteira.atualizada_em.isoformat(),
+    })
+
+
+@require_GET
+def consultar_movimentacoes(request):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"erro": "Autenticação necessária."},
+            status=401,
+        )
+
+    carteira = Carteira.objects.get_or_create(usuario=request.user)[0]
+
+    movimentacoes = carteira.movimentacoes.all()
+
+    return JsonResponse({
+        "movimentacoes": [
+            {
+                "id": movimentacao.id,
+                "tipo": movimentacao.tipo,
+                "tipo_display": movimentacao.get_tipo_display(),
+                "valor": str(movimentacao.valor),
+                "descricao": movimentacao.descricao,
+                "criada_em": movimentacao.criada_em.isoformat(),
+            }
+            for movimentacao in movimentacoes
+        ]
+    })
+
+@require_POST
+@csrf_protect
+def adicionar_credito_teste(request):
+    if not settings.DEBUG:
+        return JsonResponse(
+            {"erro": "Adição de créditos de teste não está disponível."},
+            status=403,
+        )
+
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"erro": "Autenticação necessária."},
+            status=401,
+        )
+
+    dados = ler_json(request)
+
+    if dados is None:
+        return JsonResponse({"erro": "JSON inválido."}, status=400)
+
+    try:
+        carteira = adicionar_saldo_teste(
+            request.user,
+            dados.get("valor"),
+        )
+    except ValidationError as erro:
+        return JsonResponse(
+            {"erro": erro.messages[0] if erro.messages else str(erro)},
+            status=400,
+        )
+
+    return JsonResponse({
+        "mensagem": "Crédito adicionado com sucesso.",
+        "saldo_disponivel": str(carteira.saldo_disponivel),
+        "saldo_reservado": str(carteira.saldo_reservado),
+    })

@@ -9,6 +9,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.views.decorators.http import require_GET, require_POST
 from django.conf import settings
 
+from decimal import Decimal, InvalidOperation
+
 from .models import Carteira, Usuario
 from .services import adicionar_saldo_teste
 
@@ -194,19 +196,20 @@ def consultar_movimentacoes(request):
         ]
     })
 
+
 @require_POST
 @csrf_protect
 def adicionar_credito_teste(request):
-    if not settings.DEBUG:
-        return JsonResponse(
-            {"erro": "Adição de créditos de teste não está disponível."},
-            status=403,
-        )
-
     if not request.user.is_authenticated:
         return JsonResponse(
             {"erro": "Autenticação necessária."},
             status=401,
+        )
+
+    if request.user.papel != "participante":
+        return JsonResponse(
+            {"erro": "Somente participantes podem adicionar créditos."},
+            status=403,
         )
 
     dados = ler_json(request)
@@ -215,18 +218,30 @@ def adicionar_credito_teste(request):
         return JsonResponse({"erro": "JSON inválido."}, status=400)
 
     try:
-        carteira = adicionar_saldo_teste(
-            request.user,
-            dados.get("valor"),
-        )
-    except ValidationError as erro:
+        valor = Decimal(str(dados.get("valor", "")))
+
+        if not valor.is_finite() or valor < Decimal("10.00"):
+            return JsonResponse(
+                {"erro": "O valor mínimo é R$ 10,00."},
+                status=400,
+            )
+
+        if valor > Decimal("1000.00"):
+            return JsonResponse(
+                {"erro": "O valor máximo por operação é R$ 1.000,00."},
+                status=400,
+            )
+
+        carteira = adicionar_saldo_teste(request.user, valor)
+
+    except (ValidationError, InvalidOperation, ValueError):
         return JsonResponse(
-            {"erro": erro.messages[0] if erro.messages else str(erro)},
+            {"erro": "Informe um valor válido, com até duas casas decimais."},
             status=400,
         )
 
     return JsonResponse({
-        "mensagem": "Crédito adicionado com sucesso.",
+        "mensagem": "Créditos fictícios adicionados com sucesso.",
         "saldo_disponivel": str(carteira.saldo_disponivel),
         "saldo_reservado": str(carteira.saldo_reservado),
     })

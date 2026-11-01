@@ -327,3 +327,72 @@ class AutenticacaoTests(TestCase):
             resposta.json()["movimentacoes"],
             [],
         )
+
+    def test_adicionar_credito_sem_autenticacao_retorna_401(self):
+        resposta = self.client.post(
+            reverse("adicionar-credito-teste"),
+            data=json.dumps({"valor": "100.00"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resposta.status_code, 401)
+
+    def test_participante_adiciona_credito_com_sucesso(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.post(
+            reverse("adicionar-credito-teste"),
+            data=json.dumps({"valor": "100.00"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(
+            Decimal(resposta.json()["saldo_disponivel"]),
+            Decimal("100.00"),
+        )
+        self.assertEqual(
+            Decimal(resposta.json()["saldo_reservado"]),
+            Decimal("0.00"),
+        )
+
+        carteira = Carteira.objects.get(usuario=self.usuario)
+
+        self.assertEqual(carteira.movimentacoes.count(), 1)
+        self.assertEqual(
+            carteira.movimentacoes.first().tipo,
+            "deposito",
+        )
+
+    def test_adicionar_credito_abaixo_do_minimo_retorna_400(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.post(
+            reverse("adicionar-credito-teste"),
+            data=json.dumps({"valor": "5.00"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resposta.status_code, 400)
+
+    def test_adicionar_credito_acima_do_maximo_retorna_400(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.post(
+            reverse("adicionar-credito-teste"),
+            data=json.dumps({"valor": "1001.00"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resposta.status_code, 400)
+
+    def test_adicionar_credito_com_duas_casas_decimais(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.post(
+            reverse("adicionar-credito-teste"),
+            data=json.dumps({"valor": "100.50"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(resposta.status_code, 200)
